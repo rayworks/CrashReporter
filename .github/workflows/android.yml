@@ -24,9 +24,8 @@ jobs:
         token: ${{ secrets.GITHUBTOKEN }}
         name: ${{ secrets.GITHUBUSERNAME }}
       run: |
-        touch local.properties
-        echo githubToken="$token" >> local.properties
-        echo githubUserName="$name" >> local.properties
+        echo githubToken="$token" >> ${{ github.workspace }}/gradle.properties
+        echo githubUserName="$name" >> ${{ github.workspace }}/gradle.properties
         echo "end of properties"
       shell: bash
     - name: Grant execute permission for gradlew
