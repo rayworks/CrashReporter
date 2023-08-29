@@ -52,5 +52,11 @@
             android:layout_height="wrap_content"
             android:text="open crash list" />
 
+        <Button
+            android:id="@+id/crashNative"
+            android:text="Div zero"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
     </com.google.android.flexbox.FlexboxLayout>
 </RelativeLayout>

@@ -155,4 +155,13 @@ public class CrashUtil {
         file.mkdirs();
         return defaultPath;
     }
+
+    public static String getDefaultPath(Context context) {
+        String defaultPath = context.getExternalFilesDir(null).getAbsolutePath()
+                + File.separator + Constants.CRASH_REPORT_DIR;
+
+        File file = new File(defaultPath);
+        file.mkdirs();
+        return defaultPath;
+    }
 }

@@ -8,7 +8,19 @@ import com.balsikandar.crashreporter.utils.CrashReporterNotInitializedException;
 import com.balsikandar.crashreporter.utils.CrashReporterExceptionHandler;
 import com.balsikandar.crashreporter.utils.CrashUtil;
 
+import java.io.File;
+
 public class CrashReporter {
+
+    static {
+        System.loadLibrary("breakpad-core");
+    }
+
+    public static void initBreakpad(String path){
+        initBreakpadNative(path);
+    }
+
+    private static native void initBreakpadNative(String path);
 
     private static Context applicationContext;
 
@@ -21,14 +33,28 @@ public class CrashReporter {
     }
 
     public static void initialize(Context context) {
+        System.out.println(">>><<< init CrashReporter");
+
         applicationContext = context;
         setUpExceptionHandler();
+        initNative(context);
+    }
+
+    private static void initNative(Context context) {
+        String fileDir = crashReportPath == null ? CrashUtil.getDefaultPath(context) : crashReportPath;
+        File coreFolder = new File(new File(fileDir), "core_dump");
+        if (!coreFolder.exists())
+            coreFolder.mkdir();
+
+        System.out.println(">>> core dump path : " + coreFolder.getAbsolutePath());
+        CrashReporter.initBreakpad(coreFolder.getAbsolutePath());
     }
 
     public static void initialize(Context context, String crashReportSavePath) {
         applicationContext = context;
         crashReportPath = crashReportSavePath;
         setUpExceptionHandler();
+        initNative(context);
     }
 
     private static void setUpExceptionHandler() {

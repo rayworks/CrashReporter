@@ -12,6 +12,10 @@ import com.balsikandar.crashreporter.ui.CrashReporterActivity;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+    static {
+        System.loadLibrary("crash-lib");
+    }
+
     Context context;
     Context mContext;
 
@@ -80,5 +84,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.crashNative).setOnClickListener(v -> {
+            testCrash();
+        });
+
     }
+    public native void testCrash();
 }
