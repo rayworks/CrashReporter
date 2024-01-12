@@ -21,7 +21,7 @@ buildscript {
 
     ext.kotlin_version = '1.8.20'
     ext.butterknife_version = '8.8.1'
-    ext.compile_sdk_version = 33
+    ext.compile_sdk_version = 34
 }
 
 allprojects {
