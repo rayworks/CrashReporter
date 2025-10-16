@@ -1,11 +1,8 @@
 package com.balsikandar.crashreporter.sample;
 
 import android.app.Application;
-import android.os.Environment;
 
 import com.balsikandar.crashreporter.CrashReporter;
-
-import java.io.File;
 
 /**
  * Created by bali on 02/08/17.

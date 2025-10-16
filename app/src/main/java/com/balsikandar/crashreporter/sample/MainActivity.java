@@ -3,11 +3,15 @@ package com.balsikandar.crashreporter.sample;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
+import android.view.ViewGroup;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.balsikandar.crashreporter.CrashReporter;
 import com.balsikandar.crashreporter.ui.CrashReporterActivity;
+import com.balsikandar.crashreporter.utils.ExtensionsKt;
 
 import java.util.ArrayList;
 
@@ -21,8 +25,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ExtensionsKt.enableEdgeToEdgeModeCompat(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ViewGroup root = findViewById(R.id.topLayout);
+        ExtensionsKt.applyWindowInsetsCompat(root, WindowInsetsCompat.Type.statusBars()
+                | WindowInsetsCompat.Type.navigationBars()
+                | WindowInsetsCompat.Type.displayCutout());
 
         findViewById(R.id.nullPointer).setOnClickListener(new View.OnClickListener() {
             @Override

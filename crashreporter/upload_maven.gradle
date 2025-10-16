@@ -8,8 +8,6 @@ afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
-                from components.release
-
                 groupId group_name
 
                 artifactId module_name
@@ -17,8 +15,6 @@ afterEvaluate {
             }
 
             debug(MavenPublication) {
-                from components.debug
-
                 groupId group_name
 
                 artifactId module_name

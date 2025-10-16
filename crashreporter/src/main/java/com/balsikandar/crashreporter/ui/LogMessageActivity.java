@@ -8,13 +8,16 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.FileProvider;
+import androidx.core.view.WindowInsetsCompat;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.balsikandar.crashreporter.R;
 import com.balsikandar.crashreporter.utils.AppUtils;
+import com.balsikandar.crashreporter.utils.ExtensionsKt;
 import com.balsikandar.crashreporter.utils.FileUtils;
 
 import java.io.File;
@@ -25,8 +28,17 @@ public class LogMessageActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ExtensionsKt.enableEdgeToEdgeModeCompat(this);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_log_message);
+        ViewGroup root = findViewById(R.id.topLayout);
+
+        ExtensionsKt.applyWindowInsetsCompat(root, WindowInsetsCompat.Type.statusBars()
+                | WindowInsetsCompat.Type.navigationBars()
+                | WindowInsetsCompat.Type.displayCutout()
+        );
+
         appInfo = (TextView) findViewById(R.id.appInfo);
 
         Intent intent = getIntent();

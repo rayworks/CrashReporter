@@ -3,13 +3,19 @@ package com.balsikandar.crashreporter.ui;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
+
+import com.balsikandar.crashreporter.utils.ExtensionsKt;
 import com.google.android.material.tabs.TabLayout;
+
+import androidx.core.view.WindowInsetsCompat;
 import androidx.viewpager.widget.ViewPager;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
 
 import com.balsikandar.crashreporter.CrashReporter;
 import com.balsikandar.crashreporter.R;
@@ -45,8 +51,16 @@ public class CrashReporterActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ExtensionsKt.enableEdgeToEdgeModeCompat(this);
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.crash_reporter_activity);
+        ViewGroup root = findViewById(R.id.topLayout);
+
+        ExtensionsKt.applyWindowInsetsCompat(root, WindowInsetsCompat.Type.statusBars()
+                | WindowInsetsCompat.Type.navigationBars()
+                | WindowInsetsCompat.Type.displayCutout()
+        );
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle(getString(R.string.crash_reporter));
