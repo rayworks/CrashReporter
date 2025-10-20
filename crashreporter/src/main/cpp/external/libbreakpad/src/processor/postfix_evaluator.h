@@ -1,7 +1,6 @@
 // -*- mode: C++ -*-
 
-// Copyright (c) 2010 Google Inc.
-// All rights reserved.
+// Copyright 2010 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -13,7 +12,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -69,12 +68,9 @@
 #ifndef PROCESSOR_POSTFIX_EVALUATOR_H__
 #define PROCESSOR_POSTFIX_EVALUATOR_H__
 
-
 #include <map>
 #include <string>
 #include <vector>
-
-#include "common/using_std_string.h"
 
 namespace google_breakpad {
 
@@ -86,8 +82,8 @@ class MemoryRegion;
 template<typename ValueType>
 class PostfixEvaluator {
  public:
-  typedef map<string, ValueType> DictionaryType;
-  typedef map<string, bool> DictionaryValidityType;
+  typedef map<std::string, ValueType> DictionaryType;
+  typedef map<std::string, bool> DictionaryValidityType;
 
   // Create a PostfixEvaluator object that may be used (with Evaluate) on
   // one or more expressions.  PostfixEvaluator does not take ownership of
@@ -95,7 +91,7 @@ class PostfixEvaluator {
   // (^) will not be supported.  |dictionary| may be NULL, but evaluation
   // will fail in that case unless set_dictionary is used before calling
   // Evaluate.
-  PostfixEvaluator(DictionaryType *dictionary, const MemoryRegion *memory)
+  PostfixEvaluator(DictionaryType* dictionary, const MemoryRegion* memory)
       : dictionary_(dictionary), memory_(memory), stack_() {}
 
   // Evaluate the expression, starting with an empty stack. The results of
@@ -105,18 +101,19 @@ class PostfixEvaluator {
   // non-NULL, any keys set in the dictionary as a result of evaluation
   // will also be set to true in assigned, providing a way to determine if
   // an expression modifies any of its input variables.
-  bool Evaluate(const string &expression, DictionaryValidityType *assigned);
+  bool Evaluate(const std::string& expression,
+                DictionaryValidityType* assigned);
 
   // Like Evaluate, but provides the value left on the stack to the
   // caller. If evaluation succeeds and leaves exactly one value on
   // the stack, pop that value, store it in *result, and return true.
   // Otherwise, return false.
-  bool EvaluateForValue(const string &expression, ValueType *result);
+  bool EvaluateForValue(const std::string& expression, ValueType* result);
 
   DictionaryType* dictionary() const { return dictionary_; }
 
   // Reset the dictionary.  PostfixEvaluator does not take ownership.
-  void set_dictionary(DictionaryType *dictionary) {dictionary_ = dictionary; }
+  void set_dictionary(DictionaryType* dictionary) {dictionary_ = dictionary; }
 
  private:
   // Return values for PopValueOrIdentifier
@@ -132,45 +129,44 @@ class PostfixEvaluator {
   // if the topmost entry is a constant or variable identifier, and sets
   // |identifier| accordingly.  Returns POP_RESULT_FAIL on failure, such
   // as when the stack is empty.
-  PopResult PopValueOrIdentifier(ValueType *value, string *identifier);
+  PopResult PopValueOrIdentifier(ValueType* value, std::string* identifier);
 
   // Retrieves the topmost value on the stack.  If the topmost entry is
   // an identifier, the dictionary is queried for the identifier's value.
   // Returns false on failure, such as when the stack is empty or when
   // a nonexistent identifier is named.
-  bool PopValue(ValueType *value);
+  bool PopValue(ValueType* value);
 
   // Retrieves the top two values on the stack, in the style of PopValue.
   // value2 is popped before value1, so that value1 corresponds to the
   // entry that was pushed prior to value2.  Returns false on failure.
-  bool PopValues(ValueType *value1, ValueType *value2);
+  bool PopValues(ValueType* value1, ValueType* value2);
 
   // Pushes a new value onto the stack.
-  void PushValue(const ValueType &value);
+  void PushValue(const ValueType& value);
 
   // Evaluate expression, updating *assigned if it is non-zero. Return
   // true if evaluation completes successfully. Do not clear the stack
   // upon successful evaluation.
-  bool EvaluateInternal(const string &expression,
-                        DictionaryValidityType *assigned);
+  bool EvaluateInternal(const std::string& expression,
+                        DictionaryValidityType* assigned);
 
-  bool EvaluateToken(const string &token,
-                     const string &expression,
-                     DictionaryValidityType *assigned);
+  bool EvaluateToken(const std::string& token, const std::string& expression,
+                     DictionaryValidityType* assigned);
 
   // The dictionary mapping constant and variable identifiers (strings) to
   // values.  Keys beginning with '$' are treated as variable names, and
   // PostfixEvaluator is free to create and modify these keys.  Weak pointer.
-  DictionaryType *dictionary_;
+  DictionaryType* dictionary_;
 
   // If non-NULL, the MemoryRegion used for dereference (^) operations.
   // If NULL, dereferencing is unsupported and will fail.  Weak pointer.
-  const MemoryRegion *memory_;
+  const MemoryRegion* memory_;
 
   // The stack contains state information as execution progresses.  Values
   // are pushed on to it as the expression string is read and as operations
   // yield values; values are popped when used as operands to operators.
-  vector<string> stack_;
+  vector<std::string> stack_;
 };
 
 }  // namespace google_breakpad

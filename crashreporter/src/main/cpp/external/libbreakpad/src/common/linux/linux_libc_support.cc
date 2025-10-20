@@ -1,5 +1,4 @@
-// Copyright (c) 2012, Google Inc.
-// All rights reserved.
+// Copyright 2012 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -30,6 +29,10 @@
 // This source file provides replacements for libc functions that we need. If
 // we call the libc functions directly we risk crashing in the dynamic linker
 // as it tries to resolve uncached PLT entries.
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
 
 #include "common/linux/linux_libc_support.h"
 
@@ -129,7 +132,7 @@ const char* my_strchr(const char* haystack, char needle) {
 }
 
 const char* my_strrchr(const char* haystack, char needle) {
-  const char* ret = NULL;
+  const char* ret = nullptr;
   while (*haystack) {
     if (*haystack == needle)
       ret = haystack;
@@ -145,7 +148,7 @@ void* my_memchr(const void* src, int needle, size_t src_len) {
     if (*p == needle)
       return (void*)p;
   }
-  return NULL;
+  return nullptr;
 }
 
 // Read a hex value
@@ -190,7 +193,7 @@ const char* my_read_decimal_ptr(uintptr_t* result, const char* s) {
 }
 
 void my_memset(void* ip, char c, size_t len) {
-  char* p = (char *) ip;
+  char* p = (char*) ip;
   while (len--)
     *p++ = c;
 }

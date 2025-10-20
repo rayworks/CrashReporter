@@ -1,5 +1,4 @@
-// Copyright (c) 2010 Google Inc.
-// All rights reserved.
+// Copyright 2010 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -31,6 +30,10 @@
 //
 // Author: Mark Mentovai
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
 #include <assert.h>
 #include <stdio.h>
 
@@ -39,7 +42,6 @@
 
 #include "processor/postfix_evaluator-inl.h"
 
-#include "common/using_std_string.h"
 #include "google_breakpad/common/breakpad_types.h"
 #include "google_breakpad/processor/memory_region.h"
 #include "processor/logging.h"
@@ -60,19 +62,19 @@ class FakeMemoryRegion : public MemoryRegion {
  public:
   virtual uint64_t GetBase() const { return 0; }
   virtual uint32_t GetSize() const { return 0; }
-  virtual bool GetMemoryAtAddress(uint64_t address, uint8_t  *value) const {
+  virtual bool GetMemoryAtAddress(uint64_t address, uint8_t*  value) const {
     *value = address + 1;
     return true;
   }
-  virtual bool GetMemoryAtAddress(uint64_t address, uint16_t *value) const {
+  virtual bool GetMemoryAtAddress(uint64_t address, uint16_t* value) const {
     *value = address + 1;
     return true;
   }
-  virtual bool GetMemoryAtAddress(uint64_t address, uint32_t *value) const {
+  virtual bool GetMemoryAtAddress(uint64_t address, uint32_t* value) const {
     *value = address + 1;
     return true;
   }
-  virtual bool GetMemoryAtAddress(uint64_t address, uint64_t *value) const {
+  virtual bool GetMemoryAtAddress(uint64_t address, uint64_t* value) const {
     *value = address + 1;
     return true;
   }
@@ -84,7 +86,7 @@ class FakeMemoryRegion : public MemoryRegion {
 
 struct EvaluateTest {
   // Expression passed to PostfixEvaluator::Evaluate.
-  const string expression;
+  const std::string expression;
 
   // True if the expression is expected to be evaluable, false if evaluation
   // is expected to fail.
@@ -94,24 +96,24 @@ struct EvaluateTest {
 
 struct EvaluateTestSet {
   // The dictionary used for all tests in the set.
-  PostfixEvaluator<unsigned int>::DictionaryType *dictionary;
+  PostfixEvaluator<unsigned int>::DictionaryType* dictionary;
 
   // The list of tests.
-  const EvaluateTest *evaluate_tests;
+  const EvaluateTest* evaluate_tests;
 
   // The number of tests.
   unsigned int evaluate_test_count;
 
   // Identifiers and their expected values upon completion of the Evaluate
   // tests in the set.
-  map<string, unsigned int> *validate_data;
+  map<std::string, unsigned int>* validate_data;
 };
 
 
 struct EvaluateForValueTest {
   // Expression passed to PostfixEvaluator::Evaluate.
-  const string expression;
-  
+  const std::string expression;
+
   // True if the expression is expected to be evaluable, false if evaluation
   // is expected to fail.
   bool evaluable;
@@ -156,7 +158,7 @@ static bool RunTests() {
     { "$rAlign 36 8 @ =",  true },   // $rAlign = 36 @ 8
     { "$rAdd3 2 2 + =$rMul2 9 6 * =", true } // smashed-equals tokenization
   };
-  map<string, unsigned int> validate_data_0;
+  map<std::string, unsigned int> validate_data_0;
   validate_data_0["$rAdd"]   = 8;
   validate_data_0["$rAdd2"]  = 4;
   validate_data_0["$rSub"]   = 3;
@@ -197,7 +199,7 @@ static bool RunTests() {
       "$ebx $T0 28 - ^ =",
       true }
   };
-  map<string, unsigned int> validate_data_1;
+  map<std::string, unsigned int> validate_data_1;
   validate_data_1["$T0"]  = 0xbfff0012;
   validate_data_1["$T1"]  = 0xbfff0020;
   validate_data_1["$T2"]  = 0xbfff0019;
@@ -222,14 +224,14 @@ static bool RunTests() {
 
   FakeMemoryRegion fake_memory;
   PostfixEvaluator<unsigned int> postfix_evaluator =
-      PostfixEvaluator<unsigned int>(NULL, &fake_memory);
+      PostfixEvaluator<unsigned int>(nullptr, &fake_memory);
 
   for (unsigned int evaluate_test_set_index = 0;
        evaluate_test_set_index < evaluate_test_set_count;
        ++evaluate_test_set_index) {
-    EvaluateTestSet *evaluate_test_set =
+    EvaluateTestSet* evaluate_test_set =
         &evaluate_test_sets[evaluate_test_set_index];
-    const EvaluateTest *evaluate_tests = evaluate_test_set->evaluate_tests;
+    const EvaluateTest* evaluate_tests = evaluate_test_set->evaluate_tests;
     unsigned int evaluate_test_count = evaluate_test_set->evaluate_test_count;
 
     // The same dictionary will be used for each test in the set.  Earlier
@@ -242,7 +244,7 @@ static bool RunTests() {
     for (unsigned int evaluate_test_index = 0;
          evaluate_test_index < evaluate_test_count;
          ++evaluate_test_index) {
-      const EvaluateTest *evaluate_test = &evaluate_tests[evaluate_test_index];
+      const EvaluateTest* evaluate_test = &evaluate_tests[evaluate_test_index];
 
       // Do the test.
       bool result = postfix_evaluator.Evaluate(evaluate_test->expression,
@@ -260,14 +262,14 @@ static bool RunTests() {
     }
 
     // Validate the results.
-    for (map<string, unsigned int>::const_iterator validate_iterator =
-            evaluate_test_set->validate_data->begin();
-        validate_iterator != evaluate_test_set->validate_data->end();
-        ++validate_iterator) {
-      const string identifier = validate_iterator->first;
+    for (map<std::string, unsigned int>::const_iterator validate_iterator =
+             evaluate_test_set->validate_data->begin();
+         validate_iterator != evaluate_test_set->validate_data->end();
+         ++validate_iterator) {
+      const std::string identifier = validate_iterator->first;
       unsigned int expected_value = validate_iterator->second;
 
-      map<string, unsigned int>::const_iterator dictionary_iterator =
+      map<std::string, unsigned int>::const_iterator dictionary_iterator =
           evaluate_test_set->dictionary->find(identifier);
 
       // The identifier must exist in the dictionary.
@@ -333,7 +335,7 @@ static bool RunTests() {
   const int evaluate_for_value_tests_2_size
       = (sizeof (evaluate_for_value_tests_2)
          / sizeof (evaluate_for_value_tests_2[0]));
-  map<string, unsigned int> validate_data_2;
+  map<std::string, unsigned int> validate_data_2;
   validate_data_2["$eip"] = 0x10000000;
   validate_data_2["$ebp"] = 0xbfff000c;
   validate_data_2["$esp"] = 0xbfff0000;
@@ -344,7 +346,7 @@ static bool RunTests() {
 
   postfix_evaluator.set_dictionary(&dictionary_2);
   for (int i = 0; i < evaluate_for_value_tests_2_size; i++) {
-    const EvaluateForValueTest *test = &evaluate_for_value_tests_2[i];
+    const EvaluateForValueTest* test = &evaluate_for_value_tests_2[i];
     unsigned int result;
     if (postfix_evaluator.EvaluateForValue(test->expression, &result)
         != test->evaluable) {
@@ -362,9 +364,9 @@ static bool RunTests() {
     }
   }
 
-  for (map<string, unsigned int>::iterator v = validate_data_2.begin();
+  for (map<std::string, unsigned int>::iterator v = validate_data_2.begin();
        v != validate_data_2.end(); v++) {
-    map<string, unsigned int>::iterator a = dictionary_2.find(v->first);
+    map<std::string, unsigned int>::iterator a = dictionary_2.find(v->first);
     if (a == dictionary_2.end()) {
       fprintf(stderr, "FAIL: evaluate for value dictionary check: "
               "expected dict[\"%s\"] to be 0x%x, but it was unset\n",
@@ -378,8 +380,8 @@ static bool RunTests() {
     } 
     dictionary_2.erase(a);
   }
-  
-  map<string, unsigned int>::iterator remaining = dictionary_2.begin();
+
+  map<std::string, unsigned int>::iterator remaining = dictionary_2.begin();
   if (remaining != dictionary_2.end()) {
     fprintf(stderr, "FAIL: evaluation of test expressions put unexpected "
             "values in dictionary:\n");
@@ -396,7 +398,7 @@ static bool RunTests() {
 }  // namespace
 
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   BPLOG_INIT(&argc, &argv);
 
   return RunTests() ? 0 : 1;

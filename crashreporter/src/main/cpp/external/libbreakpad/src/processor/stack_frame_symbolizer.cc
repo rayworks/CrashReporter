@@ -1,5 +1,4 @@
-// Copyright (c) 2012 Google Inc.
-// All rights reserved.
+// Copyright 2012 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -32,11 +31,14 @@
 // line information in a stack frame, and also looks up WindowsFrameInfo or
 // CFIFrameInfo for a stack frame.
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
 #include "google_breakpad/processor/stack_frame_symbolizer.h"
 
 #include <assert.h>
 
-#include "common/scoped_ptr.h"
 #include "google_breakpad/processor/code_module.h"
 #include "google_breakpad/processor/code_modules.h"
 #include "google_breakpad/processor/source_line_resolver_interface.h"
@@ -57,10 +59,11 @@ StackFrameSymbolizer::SymbolizerResult StackFrameSymbolizer::FillSourceLineInfo(
     const CodeModules* modules,
     const CodeModules* unloaded_modules,
     const SystemInfo* system_info,
-    StackFrame* frame) {
+    StackFrame* frame,
+    std::deque<std::unique_ptr<StackFrame>>* inlined_frames) {
   assert(frame);
 
-  const CodeModule* module = NULL;
+  const CodeModule* module = nullptr;
   if (modules) {
     module = modules->GetModuleForAddress(frame->instruction);
   }
@@ -80,7 +83,7 @@ StackFrameSymbolizer::SymbolizerResult StackFrameSymbolizer::FillSourceLineInfo(
 
   // If module is already loaded, go ahead to fill source line info and return.
   if (resolver_->HasModule(frame->module)) {
-    resolver_->FillSourceLineInfo(frame);
+    resolver_->FillSourceLineInfo(frame, inlined_frames);
     return resolver_->IsModuleCorrupt(frame->module) ?
         kWarningCorruptSymbols : kNoError;
   }
@@ -91,8 +94,8 @@ StackFrameSymbolizer::SymbolizerResult StackFrameSymbolizer::FillSourceLineInfo(
   }
 
   // Start fetching symbol from supplier.
-  string symbol_file;
-  char* symbol_data = NULL;
+  std::string symbol_file;
+  char* symbol_data = nullptr;
   size_t symbol_data_size;
   SymbolSupplier::SymbolResult symbol_result = supplier_->GetCStringSymbolData(
       module, system_info, &symbol_file, &symbol_data, &symbol_data_size);
@@ -108,7 +111,7 @@ StackFrameSymbolizer::SymbolizerResult StackFrameSymbolizer::FillSourceLineInfo(
       }
 
       if (load_success) {
-        resolver_->FillSourceLineInfo(frame);
+        resolver_->FillSourceLineInfo(frame, inlined_frames);
         return resolver_->IsModuleCorrupt(frame->module) ?
             kWarningCorruptSymbols : kNoError;
       } else {
@@ -134,12 +137,12 @@ StackFrameSymbolizer::SymbolizerResult StackFrameSymbolizer::FillSourceLineInfo(
 
 WindowsFrameInfo* StackFrameSymbolizer::FindWindowsFrameInfo(
     const StackFrame* frame) {
-  return resolver_ ? resolver_->FindWindowsFrameInfo(frame) : NULL;
+  return resolver_ ? resolver_->FindWindowsFrameInfo(frame) : nullptr;
 }
 
 CFIFrameInfo* StackFrameSymbolizer::FindCFIFrameInfo(
     const StackFrame* frame) {
-  return resolver_ ? resolver_->FindCFIFrameInfo(frame) : NULL;
+  return resolver_ ? resolver_->FindCFIFrameInfo(frame) : nullptr;
 }
 
 }  // namespace google_breakpad

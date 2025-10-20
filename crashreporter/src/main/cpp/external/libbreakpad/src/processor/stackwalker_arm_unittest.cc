@@ -1,5 +1,4 @@
-// Copyright (c) 2010, Google Inc.
-// All rights reserved.
+// Copyright 2010 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -31,13 +30,16 @@
 
 // stackwalker_arm_unittest.cc: Unit tests for StackwalkerARM class.
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
 #include <string.h>
 #include <string>
 #include <vector>
 
 #include "breakpad_googletest_includes.h"
 #include "common/test_assembler.h"
-#include "common/using_std_string.h"
 #include "google_breakpad/common/minidump_format.h"
 #include "google_breakpad/processor/basic_source_line_resolver.h"
 #include "google_breakpad/processor/call_stack.h"
@@ -64,6 +66,7 @@ using google_breakpad::test_assembler::Section;
 using std::vector;
 using testing::_;
 using testing::AnyNumber;
+using testing::DoAll;
 using testing::Return;
 using testing::SetArgumentPointee;
 using testing::Test;
@@ -105,7 +108,7 @@ class StackwalkerARMFixture {
 
   // Set the Breakpad symbol information that supplier should return for
   // MODULE to INFO.
-  void SetModuleSymbols(MockCodeModule *module, const string &info) {
+  void SetModuleSymbols(MockCodeModule* module, const std::string& info) {
     size_t buffer_size;
     char *buffer = supplier.CopySymbolDataAndOwnTheCopy(info, &buffer_size);
     EXPECT_CALL(supplier, GetCStringSymbolData(module, &system_info, _, _, _))
@@ -117,7 +120,7 @@ class StackwalkerARMFixture {
   // Populate stack_region with the contents of stack_section. Use
   // stack_section.start() as the region's starting address.
   void RegionFromSection() {
-    string contents;
+    std::string contents;
     ASSERT_TRUE(stack_section.GetContents(&contents));
     stack_region.Init(stack_section.start().Value(), contents);
   }
@@ -126,7 +129,7 @@ class StackwalkerARMFixture {
   void BrandContext(MDRawContextARM *raw_context) {
     uint8_t x = 173;
     for (size_t i = 0; i < sizeof(*raw_context); i++)
-      reinterpret_cast<uint8_t *>(raw_context)[i] = (x += 17);
+      reinterpret_cast<uint8_t*>(raw_context)[i] = (x += 17);
   }
 
   SystemInfo system_info;
@@ -139,7 +142,7 @@ class StackwalkerARMFixture {
   MockSymbolSupplier supplier;
   BasicSourceLineResolver resolver;
   CallStack call_stack;
-  const vector<StackFrame *> *frames;
+  const vector<StackFrame*>* frames;
 };
 
 class SanityCheck: public StackwalkerARMFixture, public Test { };
@@ -148,7 +151,7 @@ TEST_F(SanityCheck, NoResolver) {
   // Since we have no call frame information, and all unwinding
   // requires call frame information, the stack walk will end after
   // the first frame.
-  StackFrameSymbolizer frame_symbolizer(NULL, NULL);
+  StackFrameSymbolizer frame_symbolizer(nullptr, nullptr);
   StackwalkerARM walker(&system_info, &raw_context, -1, &stack_region, &modules,
                         &frame_symbolizer);
   // This should succeed even without a resolver or supplier.
@@ -160,7 +163,7 @@ TEST_F(SanityCheck, NoResolver) {
   ASSERT_EQ(0U, modules_with_corrupt_symbols.size());
   frames = call_stack.frames();
   ASSERT_EQ(1U, frames->size());
-  StackFrameARM *frame = static_cast<StackFrameARM *>(frames->at(0));
+  StackFrameARM *frame = static_cast<StackFrameARM*>(frames->at(0));
   // Check that the values from the original raw context made it
   // through to the context in the stack frame.
   EXPECT_EQ(0, memcmp(&raw_context, &frame->context, sizeof(raw_context)));
@@ -183,7 +186,7 @@ TEST_F(GetContextFrame, Simple) {
   ASSERT_EQ(0U, modules_with_corrupt_symbols.size());
   frames = call_stack.frames();
   ASSERT_EQ(1U, frames->size());
-  StackFrameARM *frame = static_cast<StackFrameARM *>(frames->at(0));
+  StackFrameARM *frame = static_cast<StackFrameARM*>(frames->at(0));
   // Check that the values from the original raw context made it
   // through to the context in the stack frame.
   EXPECT_EQ(0, memcmp(&raw_context, &frame->context, sizeof(raw_context)));
@@ -193,7 +196,7 @@ TEST_F(GetContextFrame, Simple) {
 // without stack memory present.
 TEST_F(GetContextFrame, NoStackMemory) {
   StackFrameSymbolizer frame_symbolizer(&supplier, &resolver);
-  StackwalkerARM walker(&system_info, &raw_context, -1, NULL, &modules,
+  StackwalkerARM walker(&system_info, &raw_context, -1, nullptr, &modules,
                         &frame_symbolizer);
   vector<const CodeModule*> modules_without_symbols;
   vector<const CodeModule*> modules_with_corrupt_symbols;
@@ -203,7 +206,7 @@ TEST_F(GetContextFrame, NoStackMemory) {
   ASSERT_EQ(0U, modules_with_corrupt_symbols.size());
   frames = call_stack.frames();
   ASSERT_EQ(1U, frames->size());
-  StackFrameARM *frame = static_cast<StackFrameARM *>(frames->at(0));
+  StackFrameARM *frame = static_cast<StackFrameARM*>(frames->at(0));
   // Check that the values from the original raw context made it
   // through to the context in the stack frame.
   EXPECT_EQ(0, memcmp(&raw_context, &frame->context, sizeof(raw_context)));
@@ -259,12 +262,12 @@ TEST_F(GetCallerFrame, ScanWithoutSymbols) {
   frames = call_stack.frames();
   ASSERT_EQ(3U, frames->size());
 
-  StackFrameARM *frame0 = static_cast<StackFrameARM *>(frames->at(0));
+  StackFrameARM *frame0 = static_cast<StackFrameARM*>(frames->at(0));
   EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
   ASSERT_EQ(StackFrameARM::CONTEXT_VALID_ALL, frame0->context_validity);
   EXPECT_EQ(0, memcmp(&raw_context, &frame0->context, sizeof(raw_context)));
 
-  StackFrameARM *frame1 = static_cast<StackFrameARM *>(frames->at(1));
+  StackFrameARM *frame1 = static_cast<StackFrameARM*>(frames->at(1));
   EXPECT_EQ(StackFrame::FRAME_TRUST_SCAN, frame1->trust);
   ASSERT_EQ((StackFrameARM::CONTEXT_VALID_PC |
              StackFrameARM::CONTEXT_VALID_SP),
@@ -272,7 +275,7 @@ TEST_F(GetCallerFrame, ScanWithoutSymbols) {
   EXPECT_EQ(return_address1, frame1->context.iregs[MD_CONTEXT_ARM_REG_PC]);
   EXPECT_EQ(frame1_sp.Value(), frame1->context.iregs[MD_CONTEXT_ARM_REG_SP]);
 
-  StackFrameARM *frame2 = static_cast<StackFrameARM *>(frames->at(2));
+  StackFrameARM *frame2 = static_cast<StackFrameARM*>(frames->at(2));
   EXPECT_EQ(StackFrame::FRAME_TRUST_SCAN, frame2->trust);
   ASSERT_EQ((StackFrameARM::CONTEXT_VALID_PC |
              StackFrameARM::CONTEXT_VALID_SP),
@@ -328,14 +331,14 @@ TEST_F(GetCallerFrame, ScanWithFunctionSymbols) {
   frames = call_stack.frames();
   ASSERT_EQ(2U, frames->size());
 
-  StackFrameARM *frame0 = static_cast<StackFrameARM *>(frames->at(0));
+  StackFrameARM *frame0 = static_cast<StackFrameARM*>(frames->at(0));
   EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
   ASSERT_EQ(StackFrameARM::CONTEXT_VALID_ALL, frame0->context_validity);
   EXPECT_EQ(0, memcmp(&raw_context, &frame0->context, sizeof(raw_context)));
   EXPECT_EQ("monotreme", frame0->function_name);
   EXPECT_EQ(0x40000100U, frame0->function_base);
 
-  StackFrameARM *frame1 = static_cast<StackFrameARM *>(frames->at(1));
+  StackFrameARM *frame1 = static_cast<StackFrameARM*>(frames->at(1));
   EXPECT_EQ(StackFrame::FRAME_TRUST_SCAN, frame1->trust);
   ASSERT_EQ((StackFrameARM::CONTEXT_VALID_PC |
              StackFrameARM::CONTEXT_VALID_SP),
@@ -396,12 +399,12 @@ TEST_F(GetCallerFrame, ScanFirstFrame) {
   frames = call_stack.frames();
   ASSERT_EQ(2U, frames->size());
 
-  StackFrameARM *frame0 = static_cast<StackFrameARM *>(frames->at(0));
+  StackFrameARM *frame0 = static_cast<StackFrameARM*>(frames->at(0));
   EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
   ASSERT_EQ(StackFrameARM::CONTEXT_VALID_ALL, frame0->context_validity);
   EXPECT_EQ(0, memcmp(&raw_context, &frame0->context, sizeof(raw_context)));
 
-  StackFrameARM *frame1 = static_cast<StackFrameARM *>(frames->at(1));
+  StackFrameARM *frame1 = static_cast<StackFrameARM*>(frames->at(1));
   EXPECT_EQ(StackFrame::FRAME_TRUST_SCAN, frame1->trust);
   ASSERT_EQ((StackFrameARM::CONTEXT_VALID_PC |
              StackFrameARM::CONTEXT_VALID_SP),
@@ -459,7 +462,7 @@ TEST_F(GetCallerFrame, ScanningNotAllowed) {
   frames = call_stack.frames();
   ASSERT_EQ(1U, frames->size());
 
-  StackFrameARM *frame0 = static_cast<StackFrameARM *>(frames->at(0));
+  StackFrameARM *frame0 = static_cast<StackFrameARM*>(frames->at(0));
   EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
   ASSERT_EQ(StackFrameARM::CONTEXT_VALID_ALL, frame0->context_validity);
   EXPECT_EQ(0, memcmp(&raw_context, &frame0->context, sizeof(raw_context)));
@@ -564,13 +567,13 @@ struct CFIFixture: public StackwalkerARMFixture {
     frames = call_stack.frames();
     ASSERT_EQ(2U, frames->size());
 
-    StackFrameARM *frame0 = static_cast<StackFrameARM *>(frames->at(0));
+    StackFrameARM *frame0 = static_cast<StackFrameARM*>(frames->at(0));
     EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
     ASSERT_EQ(context_frame_validity, frame0->context_validity);
     EXPECT_EQ("enchiridion", frame0->function_name);
     EXPECT_EQ(0x40004000U, frame0->function_base);
 
-    StackFrameARM *frame1 = static_cast<StackFrameARM *>(frames->at(1));
+    StackFrameARM *frame1 = static_cast<StackFrameARM*>(frames->at(1));
     EXPECT_EQ(StackFrame::FRAME_TRUST_CFI, frame1->trust);
     ASSERT_EQ(expected_validity, frame1->context_validity);
     if (expected_validity & StackFrameARM::CONTEXT_VALID_R1)
@@ -847,12 +850,12 @@ TEST_F(GetFramesByFramePointer, OnlyFramePointer) {
   frames = call_stack.frames();
   ASSERT_EQ(3U, frames->size());
 
-  StackFrameARM *frame0 = static_cast<StackFrameARM *>(frames->at(0));
+  StackFrameARM *frame0 = static_cast<StackFrameARM*>(frames->at(0));
   EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
   ASSERT_EQ(StackFrameARM::CONTEXT_VALID_ALL, frame0->context_validity);
   EXPECT_EQ(0, memcmp(&raw_context, &frame0->context, sizeof(raw_context)));
 
-  StackFrameARM *frame1 = static_cast<StackFrameARM *>(frames->at(1));
+  StackFrameARM *frame1 = static_cast<StackFrameARM*>(frames->at(1));
   EXPECT_EQ(StackFrame::FRAME_TRUST_FP, frame1->trust);
   ASSERT_EQ((StackFrameARM::CONTEXT_VALID_PC |
              StackFrameARM::CONTEXT_VALID_LR |
@@ -865,7 +868,7 @@ TEST_F(GetFramesByFramePointer, OnlyFramePointer) {
   EXPECT_EQ(frame2_fp.Value(),
             frame1->context.iregs[MD_CONTEXT_ARM_REG_IOS_FP]);
 
-  StackFrameARM *frame2 = static_cast<StackFrameARM *>(frames->at(2));
+  StackFrameARM *frame2 = static_cast<StackFrameARM*>(frames->at(2));
   EXPECT_EQ(StackFrame::FRAME_TRUST_FP, frame2->trust);
   ASSERT_EQ((StackFrameARM::CONTEXT_VALID_PC |
              StackFrameARM::CONTEXT_VALID_LR |
@@ -943,12 +946,12 @@ TEST_F(GetFramesByFramePointer, FramePointerAndCFI) {
   frames = call_stack.frames();
   ASSERT_EQ(3U, frames->size());
 
-  StackFrameARM *frame0 = static_cast<StackFrameARM *>(frames->at(0));
+  StackFrameARM *frame0 = static_cast<StackFrameARM*>(frames->at(0));
   EXPECT_EQ(StackFrame::FRAME_TRUST_CONTEXT, frame0->trust);
   ASSERT_EQ(StackFrameARM::CONTEXT_VALID_ALL, frame0->context_validity);
   EXPECT_EQ(0, memcmp(&raw_context, &frame0->context, sizeof(raw_context)));
 
-  StackFrameARM *frame1 = static_cast<StackFrameARM *>(frames->at(1));
+  StackFrameARM *frame1 = static_cast<StackFrameARM*>(frames->at(1));
   EXPECT_EQ(StackFrame::FRAME_TRUST_FP, frame1->trust);
   ASSERT_EQ((StackFrameARM::CONTEXT_VALID_PC |
              StackFrameARM::CONTEXT_VALID_LR |
@@ -964,7 +967,7 @@ TEST_F(GetFramesByFramePointer, FramePointerAndCFI) {
   EXPECT_EQ(0x40004000U, frame1->function_base);
 
 
-  StackFrameARM *frame2 = static_cast<StackFrameARM *>(frames->at(2));
+  StackFrameARM *frame2 = static_cast<StackFrameARM*>(frames->at(2));
   EXPECT_EQ(StackFrame::FRAME_TRUST_CFI, frame2->trust);
   ASSERT_EQ((StackFrameARM::CONTEXT_VALID_PC |
              StackFrameARM::CONTEXT_VALID_LR |

@@ -1,5 +1,4 @@
-// Copyright (c) 2009, Google Inc.
-// All rights reserved.
+// Copyright 2009 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -39,6 +38,10 @@
 // generate an executable with STABS symbols (needs -m32), or -gdwarf-2 for one
 // with DWARF symbols (32- or 64-bit)
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -51,8 +54,8 @@
 namespace {
 
 // google_breakpad::MinidumpCallback to invoke after minidump generation.
-static bool callback(const char *dump_path, const char *id,
-                     void *context,
+static bool callback(const char* dump_path, const char* id,
+                     void* context,
                      bool succeeded) {
   if (succeeded) {
     printf("dump guid is %s\n", id);
@@ -65,14 +68,14 @@ static bool callback(const char *dump_path, const char *id,
 }
 
 static void CrashFunction() {
-  int *i = reinterpret_cast<int*>(0x45);
+  int* i = reinterpret_cast<int*>(0x45);
   *i = 5;  // crash!
 }
 
 }  // namespace
 
-int main(int argc, char **argv) {
-  google_breakpad::ExceptionHandler eh(".", NULL, callback, NULL, true);
+int main(int argc, char** argv) {
+  google_breakpad::ExceptionHandler eh(".", nullptr, callback, nullptr, true);
   if (!eh.WriteMinidump()) {
     printf("Failed to generate on-demand minidump\n");
   }
