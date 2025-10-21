@@ -1,3 +1,12 @@
 /build
 .gradle/
 .cxx/
+.deps/
+/local.properties
+/outputs/
+/intermediates/
+/cmake/
+/cmake-build-debug/
+/cmake-build-release/
+*.o
+*.a

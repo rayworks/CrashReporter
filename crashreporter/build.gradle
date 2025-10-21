@@ -1,10 +1,15 @@
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+}
 
 android {
     compileSdkVersion rootProject.ext.compile_sdk_version
+    ndkVersion "28.2.13676358"
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion rootProject.ext.compile_sdk_version
         versionCode 1
         versionName "1.0"
@@ -12,7 +17,8 @@ android {
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a", "x86","x86_64"
+            //noinspection ChromeOsAbiSupport
+            abiFilters "armeabi-v7a", "arm64-v8a"
         }
     }
     buildTypes {
@@ -28,7 +34,11 @@ android {
         }
     }
 
+    namespace("com.balsikandar.crashreporter")
+
 }
+
+apply from: '../compile_options.gradle'
 
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
@@ -36,11 +46,14 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.recyclerview:recyclerview:1.3.1'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.activity:activity-ktx:1.8.0'
+    implementation 'androidx.activity:activity:1.8.0'
+
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation 'com.google.android.material:material:1.12.0'
     testImplementation 'junit:junit:4.13.2'
     implementation 'androidx.test.ext:junit:1.1.5'
 }
 
-apply from: 'upload_maven.gradle'
+apply from: './upload_maven.gradle'

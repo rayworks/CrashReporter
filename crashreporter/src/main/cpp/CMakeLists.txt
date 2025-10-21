@@ -18,7 +18,7 @@ endif ()
 
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=implicit-function-declaration")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 ")
 
 # breakpad
 include_directories(external/libbreakpad/src external/libbreakpad/src/common/android/include)

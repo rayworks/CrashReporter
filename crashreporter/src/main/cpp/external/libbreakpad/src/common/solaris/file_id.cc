@@ -1,5 +1,4 @@
-// Copyright (c) 2007, Google Inc.
-// All rights reserved.
+// Copyright 2007 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -33,20 +32,23 @@
 //
 // Author: Alfred Peng
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
+#include "common/solaris/file_id.h"
+
+#include <assert.h>
 #include <elf.h>
 #include <fcntl.h>
 #include <gelf.h>
-#include <sys/mman.h>
-#include <sys/ksyms.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/ksyms.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
-#include <cassert>
-#include <cstdio>
-
 #include "common/md5.h"
-#include "common/solaris/file_id.h"
 #include "common/solaris/message_output.h"
 #include "google_breakpad/common/minidump_format.h"
 
@@ -54,21 +56,21 @@ namespace google_breakpad {
 
 class AutoElfEnder {
  public:
-  AutoElfEnder(Elf *elf) : elf_(elf) {}
+  AutoElfEnder(Elf* elf) : elf_(elf) {}
   ~AutoElfEnder() { if (elf_) elf_end(elf_); }
  private:
-  Elf *elf_;
+  Elf* elf_;
 };
 
 // Find the text section in elf object file.
 // Return the section start address and the size.
-static bool FindElfTextSection(int fd, const void *elf_base,
-                               const void **text_start,
-                               int *text_size) {
+static bool FindElfTextSection(int fd, const void* elf_base,
+                               const void** text_start,
+                               int* text_size) {
   assert(text_start);
   assert(text_size);
 
-  *text_start = NULL;
+  *text_start = nullptr;
   *text_size = 0;
 
   if (elf_version(EV_CURRENT) == EV_NONE) {
@@ -78,10 +80,10 @@ static bool FindElfTextSection(int fd, const void *elf_base,
 
   GElf_Ehdr elf_header;
   lseek(fd, 0L, 0);
-  Elf *elf = elf_begin(fd, ELF_C_READ, NULL);
+  Elf* elf = elf_begin(fd, ELF_C_READ, nullptr);
   AutoElfEnder elfEnder(elf);
 
-  if (gelf_getehdr(elf, &elf_header) == (GElf_Ehdr *)NULL) {
+  if (gelf_getehdr(elf, &elf_header) == (GElf_Ehdr*)nullptr) {
     print_message2(2, "failed to read elf header: %s\n", elf_errmsg(-1));
     return false;
   }
@@ -95,18 +97,18 @@ static bool FindElfTextSection(int fd, const void *elf_base,
   }
 
   static const char kTextSectionName[] = ".text";
-  const GElf_Shdr *text_section = NULL;
-  Elf_Scn *scn = NULL;
+  const GElf_Shdr* text_section = nullptr;
+  Elf_Scn* scn = nullptr;
   GElf_Shdr shdr;
 
-  while ((scn = elf_nextscn(elf, scn)) != NULL) {
-    if (gelf_getshdr(scn, &shdr) == (GElf_Shdr *)0) {
+  while ((scn = elf_nextscn(elf, scn)) != nullptr) {
+    if (gelf_getshdr(scn, &shdr) == (GElf_Shdr*)0) {
       print_message2(2, "failed to read section header: %s\n", elf_errmsg(0));
       return false;
     }
 
     if (shdr.sh_type == SHT_PROGBITS) {
-      const char *section_name = elf_strptr(elf, elf_header.e_shstrndx,
+      const char* section_name = elf_strptr(elf, elf_header.e_shstrndx,
                                             shdr.sh_name);
       if (!section_name) {
         print_message2(2, "Section name error: %s\n", elf_errmsg(-1));
@@ -119,17 +121,13 @@ static bool FindElfTextSection(int fd, const void *elf_base,
       }
     }
   }
-  if (text_section != NULL && text_section->sh_size > 0) {
-    *text_start = (char *)elf_base + text_section->sh_offset;
+  if (text_section != nullptr && text_section->sh_size > 0) {
+    *text_start = (char*)elf_base + text_section->sh_offset;
     *text_size = text_section->sh_size;
     return true;
   }
 
   return false;
-}
-
-FileID::FileID(const char *path) {
-  strcpy(path_, path);
 }
 
 class AutoCloser {
@@ -139,6 +137,12 @@ class AutoCloser {
  private:
   int fd_;
 };
+
+namespace elf {
+
+FileID::FileID(const char* path) {
+  strcpy(path_, path);
+}
 
 bool FileID::ElfFileIdentifier(unsigned char identifier[16]) {
   int fd = 0;
@@ -150,29 +154,29 @@ bool FileID::ElfFileIdentifier(unsigned char identifier[16]) {
   if (fstat(fd, &st) != 0 || st.st_size <= 0)
     return false;
 
-  void *base = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+  void* base = mmap(nullptr, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
   if (base == MAP_FAILED)
     return false;
 
   bool success = false;
-  const void *text_section = NULL;
+  const void* text_section = nullptr;
   int text_size = 0;
 
   if (FindElfTextSection(fd, base, &text_section, &text_size)) {
     MD5Context md5;
     MD5Init(&md5);
-    MD5Update(&md5, (const unsigned char *)text_section, text_size);
+    MD5Update(&md5, (const unsigned char*)text_section, text_size);
     MD5Final(identifier, &md5);
     success = true;
   }
 
-  munmap((char *)base, st.st_size);
+  munmap((char*)base, st.st_size);
   return success;
 }
 
 // static
 bool FileID::ConvertIdentifierToString(const unsigned char identifier[16],
-                                       char *buffer, int buffer_length) {
+                                       char* buffer, int buffer_length) {
   if (buffer_length < 34)
     return false;
 
@@ -194,4 +198,5 @@ bool FileID::ConvertIdentifierToString(const unsigned char identifier[16],
   return true;
 }
 
+}  // elf
 }  // namespace google_breakpad

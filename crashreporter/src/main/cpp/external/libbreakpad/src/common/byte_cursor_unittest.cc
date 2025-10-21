@@ -1,5 +1,4 @@
-// Copyright (c) 2010 Google Inc.
-// All rights reserved.
+// Copyright 2010 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -32,13 +31,16 @@
 // byte_cursor_unittest.cc: Unit tests for google_breakpad::ByteBuffer
 // and google_breakpad::ByteCursor.
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
 #include <string>
 
 #include <string.h>
 
 #include "breakpad_googletest_includes.h"
 #include "common/byte_cursor.h"
-#include "common/using_std_string.h"
 
 using google_breakpad::ByteBuffer;
 using google_breakpad::ByteCursor;
@@ -593,7 +595,7 @@ TEST(Extractor, Signed4) {
   int32_t a;
   // For some reason, G++ 4.4.1 complains:
   //   warning: array subscript is above array bounds
-  // in ByteCursor::Read(size_t, bool, T *) as it inlines this call, but
+  // in ByteCursor::Read(size_t, bool, T*) as it inlines this call, but
   // I'm not able to see how such a reference would occur.
   EXPECT_TRUE(cursor >> a);
   EXPECT_EQ(-380377902, a);
@@ -627,7 +629,7 @@ TEST(Extractor, Unsigned4) {
   uint32_t a;
   // For some reason, G++ 4.4.1 complains:
   //   warning: array subscript is above array bounds
-  // in ByteCursor::Read(size_t, bool, T *) as it inlines this call, but
+  // in ByteCursor::Read(size_t, bool, T*) as it inlines this call, but
   // I'm not able to see how such a reference would occur.
   EXPECT_TRUE(cursor >> a);
   EXPECT_EQ(0xe953e4d2, a);
@@ -718,10 +720,10 @@ TEST(Strings, PointTo) {
   ByteBuffer buffer(data, sizeof(data));
   ByteCursor cursor(&buffer);
 
-  const uint8_t *received1;
-  const uint8_t *received2;
-  const uint8_t *received3;
-  const uint8_t *received4;
+  const uint8_t* received1;
+  const uint8_t* received2;
+  const uint8_t* received3;
+  const uint8_t* received4;
   EXPECT_FALSE(cursor
                .PointTo(&received1, 3)
                .PointTo(&received2, 3)
@@ -730,7 +732,7 @@ TEST(Strings, PointTo) {
   EXPECT_EQ(data + 0, received1);
   EXPECT_EQ(data + 3, received2);
   EXPECT_EQ(data + 6, received3);
-  EXPECT_EQ(NULL, received4);
+  EXPECT_EQ(nullptr, received4);
 }
 
 TEST(Strings, CString) {
@@ -738,7 +740,7 @@ TEST(Strings, CString) {
   ByteBuffer buffer(data, sizeof(data) - 1);  // don't include terminating '\0'
   ByteCursor cursor(&buffer);
 
-  string a, b, c;
+  std::string a, b, c;
   EXPECT_TRUE(cursor.CString(&a).CString(&b));
   EXPECT_EQ("abc", a);
   EXPECT_EQ("", b);
@@ -752,7 +754,7 @@ TEST(Strings, CStringLimit) {
   ByteBuffer buffer(data, sizeof(data) - 1);  // don't include terminating '\0'
   ByteCursor cursor(&buffer);
 
-  string a, b, c, d, e;
+  std::string a, b, c, d, e;
 
   EXPECT_TRUE(cursor.CString(&a, 3));
   EXPECT_EQ("abc", a);

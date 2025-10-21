@@ -1,7 +1,6 @@
 // -*- mode: c++ -*-
 
-// Copyright (c) 2018 Google Inc.
-// All rights reserved.
+// Copyright 2018 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -13,7 +12,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -49,29 +48,22 @@ namespace google_breakpad {
 // A class for producing a vector of google_breakpad::Module::Range
 // instances from a parsed DWARF range list.
 
-class DwarfRangeListHandler: public dwarf2reader::RangeListHandler {
+class DwarfRangeListHandler: public RangeListHandler {
  public:
-  DwarfRangeListHandler(uint64 base_address, vector<Module::Range> *ranges)
-      : base_address_(base_address), ranges_(ranges) { }
+  DwarfRangeListHandler(vector<Module::Range>* ranges)
+      : ranges_(ranges) { }
 
   ~DwarfRangeListHandler() { }
 
   // Add a range to the list
-  void AddRange(uint64 begin, uint64 end);
-
-  // Record the new base address and use it for the following entries
-  void SetBaseAddress(uint64 base_address);
+  void AddRange(uint64_t begin, uint64_t end);
 
   // Sort the ranges so that they are in ascending order of starting address
   void Finish();
 
  private:
-  // The current PC to add to every entry, this can be overridden by a special
-  // list entry
-  uint64 base_address_;
-
   // The list of ranges to be populated
-  vector<Module::Range> *ranges_;
+  vector<Module::Range>* ranges_;
 };
 
 } // namespace google_breakpad

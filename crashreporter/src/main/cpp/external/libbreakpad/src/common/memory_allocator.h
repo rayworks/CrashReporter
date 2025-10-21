@@ -1,5 +1,4 @@
-// Copyright (c) 2009, Google Inc.
-// All rights reserved.
+// Copyright 2009 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -30,10 +29,11 @@
 #ifndef GOOGLE_BREAKPAD_COMMON_MEMORY_ALLOCATOR_H_
 #define GOOGLE_BREAKPAD_COMMON_MEMORY_ALLOCATOR_H_
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include <memory>
 #include <vector>
@@ -61,8 +61,8 @@ class PageAllocator {
  public:
   PageAllocator()
       : page_size_(getpagesize()),
-        last_(NULL),
-        current_page_(NULL),
+        last_(nullptr),
+        current_page_(nullptr),
         page_offset_(0),
         pages_allocated_(0) {
   }
@@ -71,16 +71,24 @@ class PageAllocator {
     FreeAll();
   }
 
-  void *Alloc(size_t bytes) {
+  // Rounds up `offset` to the closest properly aligned value. `alignment` must
+  // be positive and a power of two.
+  template <typename T>
+  static T AlignUp(T offset, size_t alignment) {
+    assert(alignment > 0 && ((alignment - 1) & alignment) == 0);
+    return (offset + (alignment - 1)) & ~(alignment - 1);
+  }
+
+  void* Alloc(size_t bytes) {
     if (!bytes)
-      return NULL;
+      return nullptr;
 
     if (current_page_ && page_size_ - page_offset_ >= bytes) {
-      uint8_t *const ret = current_page_ + page_offset_;
+      uint8_t* const ret = current_page_ + page_offset_;
       page_offset_ += bytes;
       if (page_offset_ == page_size_) {
         page_offset_ = 0;
-        current_page_ = NULL;
+        current_page_ = nullptr;
       }
 
       return ret;
@@ -88,14 +96,14 @@ class PageAllocator {
 
     const size_t pages =
         (bytes + sizeof(PageHeader) + page_size_ - 1) / page_size_;
-    uint8_t *const ret = GetNPages(pages);
+    uint8_t* const ret = GetNPages(pages);
     if (!ret)
-      return NULL;
+      return nullptr;
 
     page_offset_ =
         (page_size_ - (page_size_ * pages - (bytes + sizeof(PageHeader)))) %
         page_size_;
-    current_page_ = page_offset_ ? ret + page_size_ * (pages - 1) : NULL;
+    current_page_ = page_offset_ ? ret + page_size_ * (pages - 1) : nullptr;
 
     return ret + sizeof(PageHeader);
   }
@@ -115,11 +123,11 @@ class PageAllocator {
   unsigned long pages_allocated() { return pages_allocated_; }
 
  private:
-  uint8_t *GetNPages(size_t num_pages) {
-    void *a = sys_mmap(NULL, page_size_ * num_pages, PROT_READ | PROT_WRITE,
+  uint8_t* GetNPages(size_t num_pages) {
+    void* a = sys_mmap(nullptr, page_size_ * num_pages, PROT_READ | PROT_WRITE,
                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (a == MAP_FAILED)
-      return NULL;
+      return nullptr;
 
 #if defined(MEMORY_SANITIZER)
     // We need to indicate to MSan that memory allocated through sys_mmap is
@@ -127,7 +135,7 @@ class PageAllocator {
     __msan_unpoison(a, page_size_ * num_pages);
 #endif
 
-    struct PageHeader *header = reinterpret_cast<PageHeader*>(a);
+    struct PageHeader* header = reinterpret_cast<PageHeader*>(a);
     header->next = last_;
     header->num_pages = num_pages;
     last_ = header;
@@ -138,34 +146,37 @@ class PageAllocator {
   }
 
   void FreeAll() {
-    PageHeader *next;
+    PageHeader* next;
 
-    for (PageHeader *cur = last_; cur; cur = next) {
+    for (PageHeader* cur = last_; cur; cur = next) {
       next = cur->next;
       sys_munmap(cur, cur->num_pages * page_size_);
     }
   }
 
   struct PageHeader {
-    PageHeader *next;  // pointer to the start of the next set of pages.
+    PageHeader* next;  // pointer to the start of the next set of pages.
     size_t num_pages;  // the number of pages in this set.
   };
 
   const size_t page_size_;
-  PageHeader *last_;
-  uint8_t *current_page_;
+  PageHeader* last_;
+  uint8_t* current_page_;
   size_t page_offset_;
   unsigned long pages_allocated_;
 };
 
 // Wrapper to use with STL containers
 template <typename T>
-struct PageStdAllocator : public std::allocator<T> {
-  typedef typename std::allocator<T>::pointer pointer;
-  typedef typename std::allocator<T>::size_type size_type;
+struct PageStdAllocator {
+  using AllocatorTraits = std::allocator_traits<std::allocator<T>>;
+  using value_type = typename AllocatorTraits::value_type;
+  using pointer = typename AllocatorTraits::pointer;
+  using difference_type = typename AllocatorTraits::difference_type;
+  using size_type = typename AllocatorTraits::size_type;
 
   explicit PageStdAllocator(PageAllocator& allocator) : allocator_(allocator),
-                                                        stackdata_(NULL),
+                                                        stackdata_(nullptr),
                                                         stackdata_size_(0)
   {}
 

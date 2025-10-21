@@ -1,5 +1,4 @@
-// Copyright (c) 2007, Google Inc.
-// All rights reserved.
+// Copyright 2007 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -33,22 +32,26 @@
 //
 // Author: Mark Mentovai
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <time.h>
 
+#include <cstdint>
 #include <string>
 
 #include "common/stdio_wrapper.h"
-#include "common/using_std_string.h"
 #include "processor/logging.h"
 #include "processor/pathname_stripper.h"
 
 namespace google_breakpad {
 
-LogStream::LogStream(std::ostream &stream, Severity severity,
-                     const char *file, int line)
+LogStream::LogStream(std::ostream& stream, Severity severity,
+                     const char* file, int line)
     : stream_(stream) {
   time_t clock;
   time(&clock);
@@ -61,7 +64,7 @@ LogStream::LogStream(std::ostream &stream, Severity severity,
   char time_string[20];
   strftime(time_string, sizeof(time_string), "%Y-%m-%d %H:%M:%S", &tm_struct);
 
-  const char *severity_string = "UNKNOWN_SEVERITY";
+  const char* severity_string = "UNKNOWN_SEVERITY";
   switch (severity) {
     case SEVERITY_INFO:
       severity_string = "INFO";
@@ -82,25 +85,25 @@ LogStream::~LogStream() {
   stream_ << std::endl;
 }
 
-string HexString(uint32_t number) {
+std::string HexString(uint32_t number) {
   char buffer[11];
   snprintf(buffer, sizeof(buffer), "0x%x", number);
-  return string(buffer);
+  return std::string(buffer);
 }
 
-string HexString(uint64_t number) {
+std::string HexString(uint64_t number) {
   char buffer[19];
   snprintf(buffer, sizeof(buffer), "0x%" PRIx64, number);
-  return string(buffer);
+  return std::string(buffer);
 }
 
-string HexString(int number) {
+std::string HexString(int number) {
   char buffer[19];
   snprintf(buffer, sizeof(buffer), "0x%x", number);
-  return string(buffer);
+  return std::string(buffer);
 }
 
-int ErrnoString(string *error_string) {
+int ErrnoString(std::string* error_string) {
   assert(error_string);
 
   // strerror isn't necessarily thread-safe.  strerror_r would be preferrable,

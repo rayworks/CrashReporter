@@ -1,5 +1,4 @@
-// Copyright (c) 2010 Google Inc.
-// All rights reserved.
+// Copyright 2010 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -32,17 +31,20 @@
 //
 // Author: Mark Mentovai
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "common/path_helper.h"
-#include "common/scoped_ptr.h"
-#include "common/using_std_string.h"
 #include "google_breakpad/processor/basic_source_line_resolver.h"
 #include "google_breakpad/processor/minidump.h"
 #include "google_breakpad/processor/minidump_processor.h"
@@ -57,9 +59,11 @@ namespace {
 struct Options {
   bool machine_readable;
   bool output_stack_contents;
+  bool output_requesting_thread_only;
+  bool brief;
 
-  string minidump_file;
-  std::vector<string> symbol_paths;
+  std::string minidump_file;
+  std::vector<std::string> symbol_paths;
 };
 
 using google_breakpad::BasicSourceLineResolver;
@@ -69,7 +73,6 @@ using google_breakpad::MinidumpThreadList;
 using google_breakpad::MinidumpProcessor;
 using google_breakpad::ProcessState;
 using google_breakpad::SimpleSymbolSupplier;
-using google_breakpad::scoped_ptr;
 
 // Processes |options.minidump_file| using MinidumpProcessor.
 // |options.symbol_path|, if non-empty, is the base directory of a
@@ -83,7 +86,7 @@ using google_breakpad::scoped_ptr;
 // call stacks for each thread contained in the minidump.  All information
 // is printed to stdout.
 bool PrintMinidumpProcess(const Options& options) {
-  scoped_ptr<SimpleSymbolSupplier> symbol_supplier;
+  std::unique_ptr<SimpleSymbolSupplier> symbol_supplier;
   if (!options.symbol_paths.empty()) {
     // TODO(mmentovai): check existence of symbol_path if specified?
     symbol_supplier.reset(new SimpleSymbolSupplier(options.symbol_paths));
@@ -110,8 +113,11 @@ bool PrintMinidumpProcess(const Options& options) {
 
   if (options.machine_readable) {
     PrintProcessStateMachineReadable(process_state);
+  } else if (options.brief) {
+    PrintRequestingThreadBrief(process_state);
   } else {
-    PrintProcessState(process_state, options.output_stack_contents, &resolver);
+    PrintProcessState(process_state, options.output_stack_contents,
+                      options.output_requesting_thread_only, &resolver);
   }
 
   return true;
@@ -128,7 +134,9 @@ static void Usage(int argc, const char *argv[], bool error) {
           "Options:\n"
           "\n"
           "  -m         Output in machine-readable format\n"
-          "  -s         Output stack contents\n",
+          "  -s         Output stack contents\n"
+          "  -c         Output thread that causes crash or dump only\n"
+          "  -b         Brief of the thread that causes crash or dump\n",
           google_breakpad::BaseName(argv[0]).c_str());
 }
 
@@ -137,14 +145,22 @@ static void SetupOptions(int argc, const char *argv[], Options* options) {
 
   options->machine_readable = false;
   options->output_stack_contents = false;
+  options->output_requesting_thread_only = false;
+  options->brief = false;
 
-  while ((ch = getopt(argc, (char * const *)argv, "hms")) != -1) {
+  while ((ch = getopt(argc, (char* const*)argv, "bchms")) != -1) {
     switch (ch) {
       case 'h':
         Usage(argc, argv, false);
         exit(0);
         break;
 
+      case 'b':
+        options->brief = true;
+        break;
+      case 'c':
+        options->output_requesting_thread_only = true;
+        break;
       case 'm':
         options->machine_readable = true;
         break;

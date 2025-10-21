@@ -1,0 +1,26 @@
+android {
+    compileOptions {
+        // Up to Java 17 APIs are available through desugaring
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        setCoreLibraryDesugaringEnabled(true)
+    }
+
+    dependencies {
+        coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    }
+
+    if (project.plugins.hasPlugin("kotlin-android")) {
+        kotlinOptions {
+            jvmTarget = 17
+
+            freeCompilerArgs += [
+                    "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+                    "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+
+                    // https://github.com/Kotlin/kotlinx.serialization/issues/2145#issuecomment-1653091753
+                    "-Xstring-concat=inline"
+            ]
+        }
+    }
+}

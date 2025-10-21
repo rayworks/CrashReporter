@@ -1,5 +1,4 @@
-// Copyright (c) 2010, Google Inc.
-// All rights reserved.
+// Copyright 2010 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -32,10 +31,13 @@
 // cfi_frame_info_unittest.cc: Unit tests for CFIFrameInfo,
 // CFIRuleParser, CFIFrameInfoParseHandler, and SimpleCFIWalker.
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
 #include <string.h>
 
 #include "breakpad_googletest_includes.h"
-#include "common/using_std_string.h"
 #include "processor/cfi_frame_info.h"
 #include "google_breakpad/processor/memory_region.h"
 
@@ -56,10 +58,10 @@ class MockMemoryRegion: public MemoryRegion {
  public:
   MOCK_CONST_METHOD0(GetBase, uint64_t());
   MOCK_CONST_METHOD0(GetSize, uint32_t());
-  MOCK_CONST_METHOD2(GetMemoryAtAddress, bool(uint64_t, uint8_t *));
-  MOCK_CONST_METHOD2(GetMemoryAtAddress, bool(uint64_t, uint16_t *));
-  MOCK_CONST_METHOD2(GetMemoryAtAddress, bool(uint64_t, uint32_t *));
-  MOCK_CONST_METHOD2(GetMemoryAtAddress, bool(uint64_t, uint64_t *));
+  MOCK_CONST_METHOD2(GetMemoryAtAddress, bool(uint64_t, uint8_t*));
+  MOCK_CONST_METHOD2(GetMemoryAtAddress, bool(uint64_t, uint16_t*));
+  MOCK_CONST_METHOD2(GetMemoryAtAddress, bool(uint64_t, uint32_t*));
+  MOCK_CONST_METHOD2(GetMemoryAtAddress, bool(uint64_t, uint64_t*));
   MOCK_CONST_METHOD0(Print, void());
 };
 
@@ -70,10 +72,10 @@ struct CFIFixture {
   void ExpectNoMemoryReferences() {
     EXPECT_CALL(memory, GetBase()).Times(0);
     EXPECT_CALL(memory, GetSize()).Times(0);
-    EXPECT_CALL(memory, GetMemoryAtAddress(_, A<uint8_t *>())).Times(0);
-    EXPECT_CALL(memory, GetMemoryAtAddress(_, A<uint16_t *>())).Times(0);
-    EXPECT_CALL(memory, GetMemoryAtAddress(_, A<uint32_t *>())).Times(0);
-    EXPECT_CALL(memory, GetMemoryAtAddress(_, A<uint64_t *>())).Times(0);
+    EXPECT_CALL(memory, GetMemoryAtAddress(_, A<uint8_t*>())).Times(0);
+    EXPECT_CALL(memory, GetMemoryAtAddress(_, A<uint16_t*>())).Times(0);
+    EXPECT_CALL(memory, GetMemoryAtAddress(_, A<uint32_t*>())).Times(0);
+    EXPECT_CALL(memory, GetMemoryAtAddress(_, A<uint64_t*>())).Times(0);
   }
 
   CFIFrameInfo cfi;
@@ -254,8 +256,9 @@ TEST_F(Scope, RegsLackRA) {
   cfi.SetCFARule("42740329");
   cfi.SetRARule("27045204");
   cfi.SetRegisterRule("$r1", ".ra");
-  ASSERT_FALSE(cfi.FindCallerRegs<uint64_t>(registers, memory,
-                                             &caller_registers));
+  ASSERT_TRUE(cfi.FindCallerRegs<uint64_t>(registers, memory,
+                                           &caller_registers));
+  ASSERT_EQ(caller_registers.end(), caller_registers.find("$r1"));
 }
 
 // Register rules can see the current frame's register values.
@@ -292,9 +295,9 @@ TEST_F(Scope, SeparateTempsRA) {
 
 class MockCFIRuleParserHandler: public CFIRuleParser::Handler {
  public:
-  MOCK_METHOD1(CFARule, void(const string &));
-  MOCK_METHOD1(RARule,  void(const string &));
-  MOCK_METHOD2(RegisterRule, void(const string &, const string &));
+  MOCK_METHOD1(CFARule, void(const std::string&));
+  MOCK_METHOD1(RARule, void(const std::string&));
+  MOCK_METHOD2(RegisterRule, void(const std::string&, const std::string&));
 };
 
 // A fixture class for testing CFIRuleParser.
@@ -439,6 +442,7 @@ TEST_F(ParseHandler, RegisterRules) {
   handler.RARule("reg-for-ra");
   handler.RegisterRule("reg1", "reg-for-reg1");
   handler.RegisterRule("reg2", "reg-for-reg2");
+  handler.RegisterRule("reg3", "reg3");
   registers["reg-for-cfa"] = 0x268a9a4a3821a797ULL;
   registers["reg-for-ra"] = 0x6301b475b8b91c02ULL;
   registers["reg-for-reg1"] = 0x06cde8e2ff062481ULL;
@@ -449,6 +453,7 @@ TEST_F(ParseHandler, RegisterRules) {
   ASSERT_EQ(0x6301b475b8b91c02ULL, caller_registers[".ra"]);
   ASSERT_EQ(0x06cde8e2ff062481ULL, caller_registers["reg1"]);
   ASSERT_EQ(0xff0c4f76403173e2ULL, caller_registers["reg2"]);
+  ASSERT_EQ(caller_registers.end(), caller_registers.find("reg3"));
 }
 
 struct SimpleCFIWalkerFixture {
@@ -479,11 +484,11 @@ struct SimpleCFIWalkerFixture {
 
 SimpleCFIWalkerFixture::CFIWalker::RegisterSet
 SimpleCFIWalkerFixture::register_map[7] = {
-  { "r0", NULL,   true,  R0_VALID, &RawContext::r0 },
-  { "r1", NULL,   true,  R1_VALID, &RawContext::r1 },
-  { "r2", NULL,   false, R2_VALID, &RawContext::r2 },
-  { "r3", NULL,   false, R3_VALID, &RawContext::r3 },
-  { "r4", NULL,   true,  R4_VALID, &RawContext::r4 },
+  { "r0", nullptr,   true,  R0_VALID, &RawContext::r0 },
+  { "r1", nullptr,   true,  R1_VALID, &RawContext::r1 },
+  { "r2", nullptr,   false, R2_VALID, &RawContext::r2 },
+  { "r3", nullptr,   false, R3_VALID, &RawContext::r3 },
+  { "r4", nullptr,   true,  R4_VALID, &RawContext::r4 },
   { "sp", ".cfa", true,  SP_VALID, &RawContext::sp },
   { "pc", ".ra",  true,  PC_VALID, &RawContext::pc },
 };
@@ -509,12 +514,12 @@ TEST_F(SimpleWalker, Walk) {
 
   // Saved r0.
   EXPECT_CALL(memory,
-              GetMemoryAtAddress(stack_top, A<uint64_t *>()))
+              GetMemoryAtAddress(stack_top, A<uint64_t*>()))
       .WillRepeatedly(DoAll(SetArgumentPointee<1>(0xdc1975eba8602302ULL),
                             Return(true)));
   // Saved return address.
   EXPECT_CALL(memory,
-              GetMemoryAtAddress(stack_top + 16, A<uint64_t *>()))
+              GetMemoryAtAddress(stack_top + 16, A<uint64_t*>()))
       .WillRepeatedly(DoAll(SetArgumentPointee<1>(0xba5ad6d9acce28deULL),
                             Return(true)));
 

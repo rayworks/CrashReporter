@@ -1,5 +1,4 @@
-// Copyright (c) 2014 Google Inc.
-// All rights reserved.
+// Copyright 2014 Google LLC
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -11,7 +10,7 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//     * Neither the name of Google Inc. nor the names of its
+//     * Neither the name of Google LLC nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
@@ -27,6 +26,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>  // Must come first
+#endif
+
 #include <ctype.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -40,11 +43,10 @@
 #include "client/linux/handler/exception_handler.h"
 #include "client/linux/handler/microdump_extra_info.h"
 #include "client/linux/microdump_writer/microdump_writer.h"
+#include "common/linux/breakpad_getcontext.h"
 #include "common/linux/eintr_wrapper.h"
 #include "common/linux/ignore_ret.h"
-#include "common/scoped_ptr.h"
 #include "common/tests/auto_tempdir.h"
-#include "common/using_std_string.h"
 
 using namespace google_breakpad;
 
@@ -87,7 +89,7 @@ void CrashAndGetMicrodump(const MappingList& mappings,
   ASSERT_NE(-1, pipe(fds));
 
   AutoTempDir temp_dir;
-  string stderr_file = temp_dir.path() + "/stderr.log";
+  std::string stderr_file = temp_dir.path() + "/stderr.log";
   int err_fd = open(stderr_file.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
   ASSERT_NE(-1, err_fd);
 
@@ -150,11 +152,11 @@ void CrashAndGetMicrodump(const MappingList& mappings,
   close(fds[1]);
 }
 
-void ExtractMicrodumpStackContents(const string& microdump_content,
-                                   string* result) {
+void ExtractMicrodumpStackContents(const std::string& microdump_content,
+                                   std::string* result) {
   std::istringstream iss(microdump_content);
   result->clear();
-  for (string line; std::getline(iss, line);) {
+  for (std::string line; std::getline(iss, line);) {
     if (line.find("S ") == 0) {
       std::istringstream stack_data(line);
       std::string key;
@@ -165,13 +167,14 @@ void ExtractMicrodumpStackContents(const string& microdump_content,
       result->reserve(result->size() + data.size() / 2);
       for (size_t i = 0; i < data.size(); i += 2) {
         std::string byte = data.substr(i, 2);
-        result->push_back(static_cast<char>(strtoul(byte.c_str(), NULL, 16)));
+        result->push_back(
+            static_cast<char>(strtoul(byte.c_str(), nullptr, 16)));
       }
     }
   }
 }
 
-void CheckMicrodumpContents(const string& microdump_content,
+void CheckMicrodumpContents(const std::string& microdump_content,
                             const MicrodumpExtraInfo& expected_info) {
   std::istringstream iss(microdump_content);
   bool did_find_os_info = false;
@@ -179,10 +182,10 @@ void CheckMicrodumpContents(const string& microdump_content,
   bool did_find_process_type = false;
   bool did_find_crash_reason = false;
   bool did_find_gpu_info = false;
-  for (string line; std::getline(iss, line);) {
+  for (std::string line; std::getline(iss, line);) {
     if (line.find("O ") == 0) {
       std::istringstream os_info_tokens(line);
-      string token;
+      std::string token;
       os_info_tokens.ignore(2); // Ignore the "O " preamble.
       // Check the OS descriptor char (L=Linux, A=Android).
       os_info_tokens >> token;
@@ -202,29 +205,29 @@ void CheckMicrodumpContents(const string& microdump_content,
       did_find_os_info = true;
     } else if (line.find("P ") == 0) {
       if (expected_info.process_type)
-        ASSERT_EQ(string("P ") + expected_info.process_type, line);
+        ASSERT_EQ(std::string("P ") + expected_info.process_type, line);
       did_find_process_type = true;
     } else if (line.find("R ") == 0) {
       std::istringstream crash_reason_tokens(line);
-      string token;
+      std::string token;
       unsigned crash_reason;
-      string crash_reason_str;
-      intptr_t crash_address;
+      std::string crash_reason_str;
+      uintptr_t crash_address;
       crash_reason_tokens.ignore(2); // Ignore the "R " preamble.
       crash_reason_tokens >> std::hex >> crash_reason >> crash_reason_str >>
           crash_address;
       ASSERT_FALSE(crash_reason_tokens.fail());
       ASSERT_EQ(MD_EXCEPTION_CODE_LIN_DUMP_REQUESTED, crash_reason);
       ASSERT_EQ("DUMP_REQUESTED", crash_reason_str);
-      ASSERT_EQ(0xDEADDEADu, kCrashAddress);
+      ASSERT_EQ(kCrashAddress, crash_address);
       did_find_crash_reason = true;
     } else if (line.find("V ") == 0) {
       if (expected_info.product_info)
-        ASSERT_EQ(string("V ") + expected_info.product_info, line);
+        ASSERT_EQ(std::string("V ") + expected_info.product_info, line);
       did_find_product_info = true;
     } else if (line.find("G ") == 0) {
       if (expected_info.gpu_fingerprint)
-        ASSERT_EQ(string("G ") + expected_info.gpu_fingerprint, line);
+        ASSERT_EQ(std::string("G ") + expected_info.gpu_fingerprint, line);
       did_find_gpu_info = true;
     }
   }
@@ -235,17 +238,17 @@ void CheckMicrodumpContents(const string& microdump_content,
   ASSERT_TRUE(did_find_gpu_info);
 }
 
-bool MicrodumpStackContains(const string& microdump_content,
-                            const string& expected_content) {
-  string result;
+bool MicrodumpStackContains(const std::string& microdump_content,
+                            const std::string& expected_content) {
+  std::string result;
   ExtractMicrodumpStackContents(microdump_content, &result);
-  return result.find(kIdentifiableString) != string::npos;
+  return result.find(kIdentifiableString) != std::string::npos;
 }
 
-void CheckMicrodumpContents(const string& microdump_content,
-                            const string& expected_fingerprint,
-                            const string& expected_product_info,
-                            const string& expected_gpu_fingerprint) {
+void CheckMicrodumpContents(const std::string& microdump_content,
+                            const std::string& expected_fingerprint,
+                            const std::string& expected_product_info,
+                            const std::string& expected_gpu_fingerprint) {
   CheckMicrodumpContents(
       microdump_content,
       MakeMicrodumpExtraInfo(expected_fingerprint.c_str(),
@@ -396,7 +399,7 @@ TEST(MicrodumpWriterTest, NoProductInfo) {
   MappingList no_mappings;
 
   const MicrodumpExtraInfo kMicrodumpExtraInfoNoProductInfo(
-      MakeMicrodumpExtraInfo(kBuildFingerprint, NULL, kGPUFingerprint));
+      MakeMicrodumpExtraInfo(kBuildFingerprint, nullptr, kGPUFingerprint));
 
   CrashAndGetMicrodump(no_mappings, kMicrodumpExtraInfoNoProductInfo, &buf);
   ASSERT_TRUE(ContainsMicrodump(buf));
@@ -411,7 +414,7 @@ TEST(MicrodumpWriterTest, NoGPUInfo) {
   MappingList no_mappings;
 
   const MicrodumpExtraInfo kMicrodumpExtraInfoNoGPUInfo(
-      MakeMicrodumpExtraInfo(kBuildFingerprint, kProductInfo, NULL));
+      MakeMicrodumpExtraInfo(kBuildFingerprint, kProductInfo, nullptr));
 
   CrashAndGetMicrodump(no_mappings, kMicrodumpExtraInfoNoGPUInfo, &buf);
   ASSERT_TRUE(ContainsMicrodump(buf));

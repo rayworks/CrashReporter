@@ -1,36 +1,37 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
+    buildscript {
+        ext.kotlin_version = '1.9.24'
+        ext.butterknife_version = '8.8.1'
+        ext.compile_sdk_version = 35
+    }
+
     repositories {
+        maven { url 'https://maven.google.com/' }
         mavenCentral()
         google()
-        jcenter()
-        maven {
-            url 'https://maven.google.com/'
-            name 'Google'
-        }
+        maven { url "https://plugins.gradle.org/m2/"}
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://repo1.maven.org/maven2/' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.2'
+        classpath 'com.android.tools.build:gradle:8.7.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
     }
 
-    ext.kotlin_version = '1.8.20'
-    ext.butterknife_version = '8.8.1'
-    ext.compile_sdk_version = 34
 }
 
 allprojects {
     repositories {
+        google()
+        maven { url 'https://maven.google.com/' }
         mavenCentral()
-        maven {
-            url 'https://maven.google.com/'
-            name 'Google'
-        }
+
+        maven { url "https://plugins.gradle.org/m2/"}
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://repo1.maven.org/maven2/' }
     }
 }
 
