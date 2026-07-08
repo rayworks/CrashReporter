@@ -36,6 +36,11 @@ android {
 
     namespace("com.balsikandar.crashreporter")
 
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 apply from: '../compile_options.gradle'

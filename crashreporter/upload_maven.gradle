@@ -2,19 +2,14 @@ apply plugin: 'maven-publish'
 
 def group_name = "com.balsikandar.android"
 def module_name = "crashreporter"
-def lib_version = '1.3.0'
+def lib_version = '1.4.2'
 
 afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
-                groupId group_name
+                from components.release
 
-                artifactId module_name
-                version lib_version
-            }
-
-            debug(MavenPublication) {
                 groupId group_name
 
                 artifactId module_name
