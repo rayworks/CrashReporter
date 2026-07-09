@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <jni.h>
 #include <android/log.h>
+#include <sys/stat.h>
 
 #include "external/libbreakpad/src/client/linux/handler/exception_handler.h"
 #include "external/libbreakpad/src/client/linux/handler/minidump_descriptor.h"
@@ -19,6 +20,12 @@ bool DumpCallback(const google_breakpad::MinidumpDescriptor &descriptor,
                   bool succeeded) {
     ALOGD("===============crash================");
     ALOGD("Dump path: %s\n", descriptor.path());
+
+    // Breakpad creates the minidump with mode 0600, which blocks `adb pull`
+    // (the shell user can't read it). Relax it so the dump can be exported.
+    if (succeeded) {
+        chmod(descriptor.path(), 0644);
+    }
     return succeeded;
 }
 
