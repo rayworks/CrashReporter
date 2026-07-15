@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 
 import com.balsikandar.crashreporter.ui.CrashReporterActivity;
+import com.balsikandar.crashreporter.upload.CrashReportUploader;
+import com.balsikandar.crashreporter.upload.CrashUploadManager;
 import com.balsikandar.crashreporter.utils.CrashReporterNotInitializedException;
 import com.balsikandar.crashreporter.utils.CrashReporterExceptionHandler;
 import com.balsikandar.crashreporter.utils.CrashUtil;
@@ -33,21 +35,9 @@ public class CrashReporter {
     }
 
     public static void initialize(Context context) {
-        System.out.println(">>><<< init CrashReporter");
-
         applicationContext = context;
         setUpExceptionHandler();
         initNative(context);
-    }
-
-    private static void initNative(Context context) {
-        String fileDir = crashReportPath == null ? CrashUtil.getDefaultPath(context) : crashReportPath;
-        File coreFolder = new File(new File(fileDir), "core_dump");
-        if (!coreFolder.exists())
-            coreFolder.mkdir();
-
-        System.out.println(">>> core dump path : " + coreFolder.getAbsolutePath());
-        CrashReporter.initBreakpad(coreFolder.getAbsolutePath());
     }
 
     public static void initialize(Context context, String crashReportSavePath) {
@@ -55,6 +45,24 @@ public class CrashReporter {
         crashReportPath = crashReportSavePath;
         setUpExceptionHandler();
         initNative(context);
+    }
+
+    private static void initNative(Context context) {
+        String fileDir = resolveCrashReportRoot(context);
+        File coreFolder = new File(new File(fileDir), "core_dump");
+        if (!coreFolder.exists())
+            coreFolder.mkdir();
+
+        CrashReporter.initBreakpad(coreFolder.getAbsolutePath());
+
+        // Set up (deferred, opt-in) upload state tracking for both text reports and
+        // native minidumps living under this root. Uploading stays disabled until the
+        // host app registers an uploader and enables it.
+        CrashUploadManager.setup(context, fileDir);
+    }
+
+    private static String resolveCrashReportRoot(Context context) {
+        return crashReportPath == null ? CrashUtil.getDefaultPath(context) : crashReportPath;
     }
 
     private static void setUpExceptionHandler() {
@@ -93,6 +101,41 @@ public class CrashReporter {
 
     public static void disableNotification() {
         isNotificationEnabled = false;
+    }
+
+    //Upload APIs
+
+    /**
+     * Register the strategy that ships crash reports to your backend. The library handles
+     * discovery, state tracking and retry; your implementation only performs the transfer.
+     * Register early (e.g. in {@code Application.onCreate}) since the process may be
+     * recreated between a crash and its upload. Pass {@code null} to clear.
+     */
+    public static void setUploader(CrashReportUploader uploader) {
+        CrashUploadManager.setUploader(uploader);
+    }
+
+    /**
+     * Enable/disable uploading. Disabled by default; enabling with an uploader registered
+     * schedules a background upload pass (subject to network availability).
+     */
+    public static void setUploadEnabled(boolean enabled) {
+        CrashUploadManager.setUploadEnabled(enabled);
+    }
+
+    /** Whether to delete a report file after it uploads successfully. Defaults to {@code true}. */
+    public static void setDeleteAfterUpload(boolean delete) {
+        CrashUploadManager.setDeleteAfterUpload(delete);
+    }
+
+    /** Max upload attempts before a report is left permanently failed. Defaults to 5. */
+    public static void setMaxUploadAttempts(int maxAttempts) {
+        CrashUploadManager.setMaxAttempts(maxAttempts);
+    }
+
+    /** Trigger an upload pass immediately (subject to the network constraint). */
+    public static void uploadPendingReports() {
+        CrashUploadManager.uploadNow();
     }
 
 }
